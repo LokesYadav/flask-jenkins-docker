@@ -1,39 +1,46 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = 'flask-jenkins-app'
+        CONTAINER_NAME = 'flask-jenkins-container'
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/LokesYadav/flask-jenkins-docker.git'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t flask-jenkins-app .'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 sh '''
-                    docker stop flask-jenkins-container || true
-                    docker rm flask-jenkins-container || true
-                    docker run -d --name flask-jenkins-container -p 5000:5000 flask-jenkins-app
+                    docker rm -f $CONTAINER_NAME || true
+                    docker run -d -p 5000:5000 --name $CONTAINER_NAME $IMAGE_NAME
                 '''
             }
         }
 
         stage('Test App') {
             steps {
-                sh '''
-                    sleep 5
-                    curl -f http://localhost:5000 || exit 1
-                '''
+                sh 'sleep 3 && curl --fail http://localhost:5000 || echo "App test failed!"'
             }
         }
     }
 
     post {
-        success {
-            echo 'Pipeline completed successfully!'
+        always {
+            echo '✅ Pipeline completed!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Pipeline failed!'
         }
     }
 }
