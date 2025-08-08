@@ -17,11 +17,13 @@ pipeline {
         }
 
         stage('Run Docker Container') {
-            steps {
-                script {
-                    docker.image('flask-jenkins-image').run('-p 5000:5000')
-                }
-            }
+    steps {
+        script {
+            sh "docker rm -f ${CONTAINER_NAME} || true"
+            docker.image("${IMAGE_NAME}").run("-d --name ${CONTAINER_NAME} -p 5000:5000")
         }
+    }
+}
+
     }
 }
